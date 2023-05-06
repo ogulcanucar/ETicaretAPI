@@ -1,4 +1,6 @@
-﻿using ETicaretAPI.Application.Exceptions;
+﻿using ETicaretAPI.Application.Abstractions.Token;
+using ETicaretAPI.Application.DTOs;
+using ETicaretAPI.Application.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using System;
@@ -14,11 +16,13 @@ namespace ETicaretAPI.Application.Features.Commands.AppUser.LoginUser
     {
         readonly UserManager<p.AppUser> _userManager;
         readonly SignInManager<p.AppUser> _signInManage;
+        readonly ITokenHandler _tokenHandler;
 
-        public LoginUserCommandHandler(UserManager<p.AppUser> userManager, SignInManager<p.AppUser> signInManage)
+        public LoginUserCommandHandler(UserManager<p.AppUser> userManager, SignInManager<p.AppUser> signInManage, ITokenHandler tokenHandler)
         {
             _userManager = userManager;
             _signInManage = signInManage;
+            _tokenHandler = tokenHandler;
         }
 
         public async Task<LoginUserCommandResponse> Handle(LoginUserCommandRequest request, CancellationToken cancellationToken)
@@ -27,12 +31,15 @@ namespace ETicaretAPI.Application.Features.Commands.AppUser.LoginUser
             if (user == null)
                 user = await _userManager.FindByEmailAsync(request.UsernameOrEmail);
             if (user == null)
-                throw new NotFoundUserExceptions("Kullanıcı veya Şifre Hatalı....");
+                throw new NotFoundUserExceptions();
             SignInResult result = await _signInManage.CheckPasswordSignInAsync(user, request.Password, false);
             if (result.Succeeded) //Authentication başarılı
             { //yetkileri belirlememiz gerekiyor
+                Token token = _tokenHandler.CreateAccessToken(5);
+                return new LoginUserSuccessCommandResponse() { Token= token };
             }
-            return new();
+            throw new AuthenticationErrorException();
+
 
         }
     }

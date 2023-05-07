@@ -1,76 +1,24 @@
-﻿using p = ETicaretAPI.Domain.Entities.Identity;
+﻿using ETicaretAPI.Application.Abstractions.Services;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Google.Apis.Auth;
-using ETicaretAPI.Application.Abstractions.Token;
-using ETicaretAPI.Application.DTOs;
-using Google.Apis.Util;
 
 namespace ETicaretAPI.Application.Features.Commands.AppUser.GoogleLogin
 {
     public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommandRequest, GoogleLoginCommandResponse>
     {
-        readonly UserManager<p.AppUser> _userManager;
-        readonly ITokenHandler _tokenHandler;
+        readonly IAuthService _authService;
 
-        public GoogleLoginCommandHandler(UserManager<p.AppUser> userManager, ITokenHandler tokenHandler)
+        public GoogleLoginCommandHandler(IAuthService authService)
         {
-            this._userManager = userManager;
-            _tokenHandler = tokenHandler;
+            _authService = authService;
         }
 
         public async Task<GoogleLoginCommandResponse> Handle(GoogleLoginCommandRequest request, CancellationToken cancellationToken)
         {
-            var settings = new GoogleJsonWebSignature.ValidationSettings()
-            {
-                Clock = new Clock(),
-                Audience = new List<string> { "832911641860-cfemu1ee976ji04f94mguv4tbf7bubhs.apps.googleusercontent.com" }                
-            };
-            var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
-            var info = new UserLoginInfo(request.Provider, payload.Subject, request.Provider);
-            p.AppUser user= await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            var token = await _authService.GoogleLoginAsync(request.IdToken, 900);
+            return new() { Token = token };
 
-            bool result=user!=null;
-
-           if (user == null)
-            {
-                user = await _userManager.FindByEmailAsync(payload.Email);
-                if (user == null)
-                {
-                    user = new()
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        Email = payload.Email,
-                        UserName = payload.Email,
-                        NameSurname = payload.Name
-                    };
-                    var identityResult = await _userManager.CreateAsync(user);
-                    result = identityResult.Succeeded;
-                }
-            }
-           if (result)
-                await _userManager.AddLoginAsync(user, info); //AspNetUserLogins
-            else
-                throw new Exception("Invalid external authentication.");
-
-            Token token = _tokenHandler.CreateAccessToken(5);
-
-            return new()
-            {
-                Token = token
-            };
         }
     }
-}
-public class Clock : IClock
-{
-    public DateTime Now => DateTime.Now.AddMinutes(5);
-
-    public DateTime UtcNow => DateTime.UtcNow.AddMinutes(5);
+   
 }
 

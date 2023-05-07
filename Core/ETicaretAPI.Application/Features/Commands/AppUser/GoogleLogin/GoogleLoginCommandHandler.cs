@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Google.Apis.Auth;
 using ETicaretAPI.Application.Abstractions.Token;
 using ETicaretAPI.Application.DTOs;
+using Google.Apis.Util;
 
 namespace ETicaretAPI.Application.Features.Commands.AppUser.GoogleLogin
 {
@@ -27,6 +28,7 @@ namespace ETicaretAPI.Application.Features.Commands.AppUser.GoogleLogin
         {
             var settings = new GoogleJsonWebSignature.ValidationSettings()
             {
+                Clock = new Clock(),
                 Audience = new List<string> { "832911641860-cfemu1ee976ji04f94mguv4tbf7bubhs.apps.googleusercontent.com" }                
             };
             var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
@@ -65,3 +67,10 @@ namespace ETicaretAPI.Application.Features.Commands.AppUser.GoogleLogin
         }
     }
 }
+public class Clock : IClock
+{
+    public DateTime Now => DateTime.Now.AddMinutes(5);
+
+    public DateTime UtcNow => DateTime.UtcNow.AddMinutes(5);
+}
+

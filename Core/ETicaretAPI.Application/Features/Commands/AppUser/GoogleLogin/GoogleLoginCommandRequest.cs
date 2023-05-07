@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Google.Apis.Util;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +18,7 @@ namespace ETicaretAPI.Application.Features.Commands.AppUser.GoogleLogin
         public string Email { get; set; }
         public string PhotoUrl { get; set; }
         public string Provider { get; set; }
+        
     }
+    
 }

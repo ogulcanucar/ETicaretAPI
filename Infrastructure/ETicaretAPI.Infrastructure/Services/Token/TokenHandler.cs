@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Unicode;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace ETicaretAPI.Infrastructure.Services.Token
             _configuration = configuration;
         }
 
-        public Application.DTOs.Token CreateAccessToken(int munite)
+        public Application.DTOs.Token CreateAccessToken(int second)
         {
             Application.DTOs.Token token = new();
             //SecurityKey simetriğini alıyoruz.
@@ -28,19 +29,30 @@ namespace ETicaretAPI.Infrastructure.Services.Token
             //Şifrelenmiş kimliği oluşturuyoruz.
             SigningCredentials signingCredentials = new(securityKey, SecurityAlgorithms.HmacSha256);
             //Oluşturulacak token ayarlarını veriyoruz
-            token.Expiration = DateTime.UtcNow.AddMinutes(munite);
+            token.Expiration = DateTime.UtcNow.AddSeconds(second);
             JwtSecurityToken securityToken = new(
                 audience: _configuration["Token:Audience"],
                 issuer: _configuration["Token:Issuer"],
                 expires: token.Expiration,
-                notBefore:DateTime.UtcNow,
-                signingCredentials:signingCredentials
+                notBefore: DateTime.UtcNow,
+                signingCredentials: signingCredentials
                 );
             //Token oluşturucu sınıfından bir örnek alalım
             JwtSecurityTokenHandler handler = new();
-            token.AccessToken=handler.WriteToken(securityToken);
+            token.AccessToken = handler.WriteToken(securityToken);
+
+            token.RefreshToken = CreateRefreshToken();
+
             return token;
-          
+
+        }
+
+        public string CreateRefreshToken()
+        {
+            byte[] number = new byte[32];
+            using RandomNumberGenerator random = RandomNumberGenerator.Create();
+            random.GetBytes(number);
+            return Convert.ToBase64String(number);
         }
     }
 }

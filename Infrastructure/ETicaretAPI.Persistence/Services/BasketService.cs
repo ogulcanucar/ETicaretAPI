@@ -19,6 +19,7 @@ public class BasketService : IBasketService
     readonly IBasketItemWriteRepository _basketItemWriteRepository;
     readonly IBasketItemReadRepository _basketItemReadRepository;
 
+   
 
     public BasketService(IHttpContextAccessor contextAccessor, UserManager<AppUser> userManager, IOrderReadRepository orderReadRepository, IBasketWriteRepository basketWriteRepository, IBasketItemWriteRepository basketItemWriteRepository, IBasketItemReadRepository basketItemReadRepository, IBasketReadRepository basketReadRepository)
     {
@@ -62,9 +63,9 @@ public class BasketService : IBasketService
             await _basketWriteRepository.SaveAsync();
             return targetBasket;
         }
-            throw new Exception("Beklenmeyen bir hatayla karşılandı...");
+        throw new Exception("Beklenmeyen bir hatayla karşılandı...");
 
-        
+
 
     }
     public async Task AddItemToBasketAsync(VM_Create_BasketItem basketItem)
@@ -86,23 +87,21 @@ public class BasketService : IBasketService
             await _basketItemWriteRepository.SaveAsync();
         }
     }
-
-
     public async Task<List<BasketItem>> GetBasketItemsAsync()
     {
-        Basket? basket=await ContextUser();
-      Basket? result=  await _basketReadRepository.Table
-             .Include(b => b.BasketItems)
-             .ThenInclude(bi => bi.Product)
-             .FirstOrDefaultAsync(b => b.Id == basket.Id);
-        return  result.BasketItems
+        Basket? basket = await ContextUser();
+        Basket? result = await _basketReadRepository.Table
+               .Include(b => b.BasketItems)
+               .ThenInclude(bi => bi.Product)
+               .FirstOrDefaultAsync(b => b.Id == basket.Id);
+        return result.BasketItems
             .ToList();
 
     }
 
     public async Task RemoveBasketItemAsync(string basketItemId)
     {
-        BasketItem? basketItem =await _basketItemReadRepository.GetByIdAsync(basketItemId);
+        BasketItem? basketItem = await _basketItemReadRepository.GetByIdAsync(basketItemId);
         if (basketItem != null)
         {
             _basketItemWriteRepository.Remove(basketItem);
@@ -116,8 +115,16 @@ public class BasketService : IBasketService
         BasketItem? _basketItem = await _basketItemReadRepository.GetByIdAsync(basketItem.BasketItemId);
         if (basketItem != null)
         {
-            _basketItem.Quantity=basketItem.Quantity;
-         await   _basketItemWriteRepository.SaveAsync();
+            _basketItem.Quantity = basketItem.Quantity;
+            await _basketItemWriteRepository.SaveAsync();
+        }
+    }
+    public Basket? GetUserActiveBasket
+    {
+        get
+        {
+            Basket? basket = ContextUser().Result;
+            return basket;
         }
     }
 }

@@ -24,7 +24,7 @@ static public class ConfigureExceptionHandlerExtension
                         StatusCode = context.Response.StatusCode,
                         Message = contextFeature.Error.Message,
                         Title = "Hata alındı!"
-                    })); ;
+                    }));
                 }
             });
         });
